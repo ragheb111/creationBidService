@@ -2531,6 +2531,8 @@ namespace Nafis.Services.Implementation
                 .ToListAsync();
 
             // Collect all file renaming tasks to execute in parallel
+            // Note: Using async lambdas without Task.Run to maintain async context
+            // and avoid unnecessary thread pool scheduling while still achieving parallelism
             var renamingTasks = new List<Task>();
 
             // Terms book attachment
@@ -2538,10 +2540,10 @@ namespace Nafis.Services.Implementation
             {
                 var termsBookExtension = Path.GetExtension(bid.Tender_Brochure_Policies_Url);
                 var namingReq = new UploadFilesRequest { AttachmentNameCategory = AttachmentNameCategories.TermsBookAttachment };
-                renamingTasks.Add(Task.Run(async () =>
+                renamingTasks.Add((async () =>
                 {
                     bid.Tender_Brochure_Policies_FileName = await _imageService.GetConvientFileName(namingReq, termsBookExtension, newBidName, bidOwner, bid.Ref_Number);
-                }));
+                })());
             }
 
             // Bid attachments
@@ -2552,10 +2554,10 @@ namespace Nafis.Services.Implementation
                 var extension = Path.GetExtension(bidAttachment.AttachedFileURL);
                 var namingReq = new UploadFilesRequest { AttachmentNameCategory = AttachmentNameCategories.SupportAttachment };
                 var attachmentCopy = bidAttachment; // Capture for closure
-                renamingTasks.Add(Task.Run(async () =>
+                renamingTasks.Add((async () =>
                 {
                     attachmentCopy.AttachmentName = await _imageService.GetConvientFileName(namingReq, extension, newBidName, bidOwner, bid.Ref_Number);
-                }));
+                })());
             }
 
             // Announcements
@@ -2566,10 +2568,10 @@ namespace Nafis.Services.Implementation
                 var extension = Path.GetExtension(announcment.AttachmentUrl);
                 var namingReq = new UploadFilesRequest { AttachmentNameCategory = AttachmentNameCategories.AnnouncementAttachment };
                 var announcmentCopy = announcment; // Capture for closure
-                renamingTasks.Add(Task.Run(async () =>
+                renamingTasks.Add((async () =>
                 {
                     announcmentCopy.AttachmentUrlFileName = await _imageService.GetConvientFileName(namingReq, extension, newBidName, bidOwner, bid.Ref_Number);
-                }));
+                })());
             }
 
             // Quotation attachments
@@ -2590,10 +2592,10 @@ namespace Nafis.Services.Implementation
                     var namingReq = new UploadFilesRequest { AttachmentNameCategory = category };
                     var quotAttachCopy = quotAttach; // Capture for closure
                     var companyName = quot.Company.CompanyName;
-                    renamingTasks.Add(Task.Run(async () =>
+                    renamingTasks.Add((async () =>
                     {
                         quotAttachCopy.FileName = await _imageService.GetConvientFileName(namingReq, extension, companyName, bidOwner, bid.Ref_Number);
-                    }));
+                    })());
                 }
             }
 
@@ -2605,20 +2607,20 @@ namespace Nafis.Services.Implementation
                 {
                     var contractExtension = Path.GetExtension(contract.ContractFileUrl);
                     var namingReq = new UploadFilesRequest { AttachmentNameCategory = AttachmentNameCategories.ContractAttachment };
-                    renamingTasks.Add(Task.Run(async () =>
+                    renamingTasks.Add((async () =>
                     {
                         contractCopy.ContractFileUrl = await _imageService.GetConvientFileName(namingReq, contractExtension, newBidName, bidOwner, bid.Ref_Number);
-                    }));
+                    })());
                 }
 
                 if (!string.IsNullOrEmpty(contract.AwardingLetterFileUrl))
                 {
                     var contractAwardingLetterExtension = Path.GetExtension(contract.AwardingLetterFileUrl);
                     var namingReq = new UploadFilesRequest { AttachmentNameCategory = AttachmentNameCategories.ContractAwardingLetterAttachment };
-                    renamingTasks.Add(Task.Run(async () =>
+                    renamingTasks.Add((async () =>
                     {
                         contractCopy.AwardingLetterFileUrl = await _imageService.GetConvientFileName(namingReq, contractAwardingLetterExtension, newBidName, bidOwner, bid.Ref_Number);
-                    }));
+                    })());
                 }
             }
 
@@ -2632,10 +2634,10 @@ namespace Nafis.Services.Implementation
                     var namingReq = new UploadFilesRequest { AttachmentNameCategory = AttachmentNameCategories.FinancialRequestInvoiceAttachment };
                     var companyName = finReq.Company.CompanyName;
                     var reqNumber = finReq.FinancialRequestNumber;
-                    renamingTasks.Add(Task.Run(async () =>
+                    renamingTasks.Add((async () =>
                     {
                         finReqCopy.InvoiceURLFileName = await _imageService.GetConvientFileName(namingReq, invoiceExtension, newBidName, companyName, reqNumber);
-                    }));
+                    })());
                 }
 
                 if (!string.IsNullOrEmpty(finReq.TransferNumberAttachementUrl))
@@ -2643,10 +2645,10 @@ namespace Nafis.Services.Implementation
                     var transerExtension = Path.GetExtension(finReq.TransferNumberAttachementUrl);
                     var namingReq = new UploadFilesRequest { AttachmentNameCategory = AttachmentNameCategories.FinancialRequestInvoiceBankTransferPaymentAttachment };
                     var reqNumber = finReq.FinancialRequestNumber;
-                    renamingTasks.Add(Task.Run(async () =>
+                    renamingTasks.Add((async () =>
                     {
                         finReqCopy.TransferNumberAttachementUrlFileName = await _imageService.GetConvientFileName(namingReq, transerExtension, newBidName, bidOwner, reqNumber);
-                    }));
+                    })());
                 }
 
                 foreach (var attach in finReq.ProviderAchievementPhaseAttachments)
@@ -2657,10 +2659,10 @@ namespace Nafis.Services.Implementation
                     var extension = Path.GetExtension(attach.FilePath);
                     var namingReq = new UploadFilesRequest { AttachmentNameCategory = AttachmentNameCategories.AchievementPhaseAttachment };
                     var companyName = finReq.Company.CompanyName;
-                    renamingTasks.Add(Task.Run(async () =>
+                    renamingTasks.Add((async () =>
                     {
                         finReqCopy.TransferNumberAttachementUrlFileName = await _imageService.GetConvientFileName(namingReq, extension, newBidName, companyName, bid.Ref_Number);
-                    }));
+                    })());
                 }
             }
 
